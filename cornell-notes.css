@@ -1,4 +1,17 @@
 /* ============================================================
+   康奈尔笔记 (Cornell Notes) 样式 v2.2
+   
+   基于 Cornell 大学官方指南的标准比例:
+   - Cue 栏: 30% (2.5 inch / 8.5 inch)
+   - Notes 栏: 70% (6 inch / 8.5 inch)
+   - Summary: 18% (底部区域)
+   
+   特性:
+   - CSS Grid 固定页面布局 (A4 标准)
+   - 清新淡雅自然绿系配色
+   - 完整数学字体支持 (拉丁/希腊/希伯来字母)
+   - Emoji/图标/图片/Mermaid/思维导图渲染
+   ============================================================ */
    康奈尔笔记 (Cornell Notes) 样式 v2.1
    
    特性:
@@ -14,6 +27,21 @@
    ═══════════════════════════════════════════════════════════ */
 
 :root {
+  /* ─── 布局尺寸 ─── */
+  /* A4 标准尺寸: 210mm x 297mm */
+  --page-width: 210mm;
+  --page-height: 297mm;
+  --page-margin: 0;
+  --content-height: 297mm;
+
+  /* 康奈尔笔记标准比例 (基于 Cornell 大学官方指南): */
+  /* Cue 栏: ~30% (2.5 inch of 8.5 inch) */
+  /* Notes 栏: ~70% (6 inch of 8.5 inch) */
+  /* Summary: ~18% (底部区域) */
+  --cue-width: 30%;
+  --notes-width: 70%;
+  --summary-height: 18%;
+  --header-height: auto;
   /* ─── 布局尺寸 ─── */
   --page-width: 176mm;
   --page-height: 250mm;
