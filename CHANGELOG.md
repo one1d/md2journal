@@ -1,3 +1,61 @@
+# v1.2.0 (2026-02-28)
+
+## 新增功能
+
+### 1. 跨平台支持
+
+- **Windows 支持:**
+  - 添加 `cli.bat` 和 `gui.bat` 批处理脚本
+  - 修复 Windows 临时目录检测 (`TEMP`, `TMP`)
+  - 修复 Windows 文件路径转换为 `file://` URL
+  - 修复 Puppeteer 参数（移除 `--disable-setuid-sandbox`）
+
+- **跨平台工具函数:**
+  - `getTempDir()` - 平台兼容的临时目录
+  - `pathToFileUrl()` - Windows/Unix 路径转 URL
+  - `getPuppeteerArgs()` - 平台特定 Puppeteer 参数
+
+### 2. 代码重构
+
+- **统一日志模块** (`logger.js`):
+  - `log` - 通用带图标日志
+  - `cliLog` - CLI 彩色日志
+  - `guiLog` - GUI 纯文本日志
+  - `configureLogger()` - 日志配置
+
+- **统一错误处理** (`errors.js`):
+  - 自定义错误类: `FileError`, `CssError`, `DirectoryError`, `BrowserError`
+  - 错误工厂函数: `fileNotFound()`, `cssNotFound()`, `dirNotFound()`
+  - 错误工具: `safeAsync()`, `normalizeError()`, `validateFile()`
+  - 全局错误处理器: `setupGlobalErrorHandler()`
+
+- **CSS 共享变量** (`variables.css`):
+  - 基础色板
+  - 字体变量
+  - 间距变量
+  - 打印控制变量
+  - 样式专属变量
+
+### 3. 项目文档
+
+- **新增文档:**
+  - `REPO.md` - 中文项目简介
+  - `REPO-en.md` - 英文项目简介
+  - 全面更新 `README.md` 和 `README-zh.md`
+
+- **文档内容:**
+  - 多平台安装说明
+  - 详细命令参考
+  - 平台特定说明（Windows/macOS/Linux）
+  - 故障排除指南
+  - 开发指南
+
+### 4. Git 配置
+
+- 完善 `.gitignore` 忽略规则
+
+---
+
 ## v1.1.3 (2026-02-28)
 
 ### 样式优化
