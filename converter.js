@@ -12,6 +12,13 @@ import { fileURLToPath } from 'url';
 import { marked } from 'marked';
 import katex from 'katex';
 import matter from 'gray-matter';
+import { fileNotFound, cssNotFound, dirNotFound, invalidDirectory } from './errors.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+import { fileNotFound, cssNotFound, dirNotFound, invalidDirectory } from './errors.js';
+
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -264,7 +271,7 @@ export async function convert(inputPath, outputPath, options = {}) {
   try {
     await fs.access(inputPath);
   } catch {
-    throw new Error(`输入文件不存在: ${inputPath}`);
+    throw fileNotFound(inputPath);
   }
 
   const cssPath = options.cssPath || path.join(__dirname, 'journal.css');
@@ -272,7 +279,7 @@ export async function convert(inputPath, outputPath, options = {}) {
     try {
       await fs.access(cssPath);
     } catch {
-      throw new Error(`CSS 文件不存在: ${cssPath}`);
+    throw cssNotFound(cssPath);
     }
   }
   const cssContent = await fs.readFile(cssPath, 'utf-8');
@@ -382,7 +389,13 @@ export async function batchConvert(inputDir, outputDir, options = {}) {
   // 输入验证
   try {
     const stat = await fs.stat(inputDir);
-    if (!stat.isDirectory()) throw new Error('不是目录');
+    if (!stat.isDirectory()) throw invalidDirectory(inputDir, '不是目录');
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw dirNotFound(inputDir);
+    }
+    throw invalidDirectory(inputDir, err.message);
+  }
   } catch (err) {
     throw new Error(`输入目录无效: ${inputDir} (${err.message})`);
   }

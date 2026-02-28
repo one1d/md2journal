@@ -1,0 +1,171 @@
+/**
+ * md2journal - 共享 CSS 变量
+ * 所有样式文件的公共变量定义
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 基础色板 (适用于所有样式)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── 主色系 ─── */
+  --color-primary: #2c3e50;      /* 主色 - 深蓝灰 */
+  --color-primary-light: #34495e; /* 主色浅 */
+  --color-primary-dark: #1a252f;  /* 主色深 */
+
+  /* ─── 辅助色系 ─── */
+  --color-secondary: #3498db;     /* 次要色 - 蓝色 */
+  --color-accent: #e74c3c;        /* 强调色 - 红色 */
+  --color-success: #27ae60;       /* 成功 - 绿色 */
+  --color-warning: #f39c12;       /* 警告 - 橙色 */
+  --color-info: #2980b9;          /* 信息 - 深蓝 */
+  --color-danger: #c0392b;        /* 危险 - 深红 */
+
+  /* ─── 背景色系 ─── */
+  --page-bg: #ffffff;             /* 页面背景 */
+  --content-bg: #ffffff;          /* 内容区背景 */
+  --code-bg: #f6f8fa;             /* 代码块背景 */
+
+  /* ─── 文本色系 ─── */
+  --text-primary: #2c3e50;        /* 主要文本 */
+  --text-secondary: #5a6c7d;      /* 次要文本 */
+  --text-muted: #95a5a6;          /* 弱化文本 */
+  --text-inverse: #ffffff;        /* 反色文本 */
+
+  /* ─── 边框色系 ─── */
+  --border-color: #dcdcdc;        /* 默认边框 */
+  --border-light: #e8e8e8;        /* 浅边框 */
+  --border-focus: #3498db;        /* 聚焦边框 */
+
+  /* ─── 阴影 ─── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.12);
+
+  /* ─── 链接色 ─── */
+  --link-color: #0055a4;
+  --link-hover: #003d73;
+  --link-visited: #6b4c9a;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 学术期刊样式变量 (journal.css)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+:root.journal {
+  --color-primary: #1a1a1a;
+  --color-secondary: #444444;
+  --color-accent: #0055a4;
+  --color-border: #999999;
+  --code-bg: #f6f8fa;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 康奈尔笔记样式变量 (cornell-notes.css)
+ * ═══════════════════════════════════════════════════════════════════════════ */
+:root.cornell-notes {
+  /* 主色 - 森林绿 */
+  --color-primary: #5a7a65;
+  --color-primary-light: #8ba396;
+  --color-primary-dark: #3d5a48;
+  
+  /* 辅助色 */
+  --color-secondary: #6b8294;
+  --color-accent: #b8956e;
+  --color-success: #7da87d;
+  --color-warning: #d4b896;
+  --color-info: #7a9ab8;
+  --color-danger: #b87a7a;
+  
+  /* Cue 区域 */
+  --cue-bg-start: #faf8f4;
+  --cue-bg-end: #f2ede5;
+  --cue-border: rgba(180, 160, 130, 0.3);
+  --cue-accent: #8b7355;
+  
+  /* Notes 区域 */
+  --notes-bg: #fdfcfa;
+  --notes-accent: #5a7a65;
+  
+  /* Summary 区域 */
+  --summary-bg-start: #f5f2eb;
+  --summary-bg-end: #ebe7df;
+  --summary-border: rgba(90, 122, 101, 0.25);
+  --summary-accent: #5a7a65;
+  
+  /* 文本 */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #7a7a7a;
+  --text-inverse: #fdfcfa;
+  
+  --border-color: #d8d4cd;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 常规 A4 样式变量 (normal-a4.css) - 与根变量相同，使用默认值
+ * ═══════════════════════════════════════════════════════════════════════════ */
+:root.normal-a4 {
+  /* 使用根变量的默认值 */
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 字体变量
+ * ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ─── 正文字体 ─── */
+  --font-serif: "Noto Serif SC", "Songti SC", "SimSun", "STSong", "Times New Roman", serif;
+  --font-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", "Heiti SC", sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "Source Code Pro", "Consolas", monospace;
+  --font-emoji: "Noto Color Emoji", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  
+  /* ─── 字号 ─── */
+  --font-size-base: 12pt;
+  --font-size-sm: 10pt;
+  --font-size-xs: 8pt;
+  --font-size-lg: 14pt;
+  --font-size-xl: 16pt;
+  --font-size-2xl: 18pt;
+  --font-size-3xl: 24pt;
+  
+  /* ─── 行高 ─── */
+  --line-height-base: 1.75;
+  --line-height-tight: 1.4;
+  --line-height-relaxed: 2;
+  
+  /* ─── 字重 ─── */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-bold: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 间距变量
+ * ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ─── 基础间距 ─── */
+  --space-xs: 0.25em;
+  --space-sm: 0.5em;
+  --space-md: 1em;
+  --space-lg: 1.5em;
+  --space-xl: 2em;
+  --space-2xl: 3em;
+  
+  /* ─── 页边距 ─── */
+  --page-margin-top: 20mm;
+  --page-margin-bottom: 20mm;
+  --page-margin-left: 25mm;
+  --page-margin-right: 25mm;
+  
+  /* ─── 段落 ─── */
+  --paragraph-spacing: 1em;
+  --first-line-indent: 2em;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 打印控制变量
+ * ═══════════════════════════════════════════════════════════════════════════ */
+:root {
+  --page-break-inside: avoid;
+  --orphans: 3;
+  --widows: 3;
+}
