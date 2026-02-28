@@ -2,6 +2,7 @@
   "name": "md2journal",
   "version": "1.2.0",
   "description": "Markdown → 中文期刊 PDF 批量自动转换工具，支持 Windows/macOS/Linux",
+  "author": "Guoqin Chen",
   "type": "module",
   "bin": {
     "md2journal": "./cli.js",

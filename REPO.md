@@ -51,7 +51,7 @@ node cli.js watch ./input ./output
 ```markdown
 ---
 title: 深度学习在自然语言处理中的应用
-author: 张三，李四
+author: Guoqin Chen
 date: 2026年2月
 abstract: 本文综述了深度学习技术在NLP领域的最新进展...
 keywords: [深度学习, 自然语言处理, Transformer]

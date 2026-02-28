@@ -36,3 +36,6 @@ pnpm-debug.log*
 # Temporary
 *.tmp
 *.temp
+
+# Local files
+md2journal-intro.md

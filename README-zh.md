@@ -207,7 +207,7 @@ md2journal watch ./input ./output --all-styles
 ```yaml
 ---
 title: 文档标题
-author: 作者姓名
+author: Guoqin Chen
 date: 2026-02-28
 abstract: 文档摘要...
 keywords: [关键词1, 关键词2]

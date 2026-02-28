@@ -51,7 +51,7 @@ node cli.js watch ./input ./output
 ```markdown
 ---
 title: Deep Learning Applications in Natural Language Processing
-author: Zhang San, Li Si
+author: Guoqin Chen
 date: February 2026
 abstract: This paper surveys recent advances in deep learning for NLP...
 keywords: [Deep Learning, NLP, Transformer]
