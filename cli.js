@@ -16,6 +16,7 @@
 
 import { Command } from 'commander';
 import chalk from 'chalk';
+import { cliLog, configureLogger } from './logger.js';
 import path from 'path';
 import fs from 'fs/promises';
 import { fileURLToPath } from 'url';
