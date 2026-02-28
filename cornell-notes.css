@@ -1,4 +1,21 @@
 /* ============================================================
+   康奈尔笔记 (Cornell Notes) 样式 v2.3
+   
+   基于 Cornell 大学官方指南的标准比例:
+   - Cue 栏: 30% (2.5 inch / 8.5 inch)
+   - Notes 栏: 70% (6 inch / 8.5 inch)
+   - Summary: 18% (底部区域)
+   
+   配色优化:
+   - 柔和米色背景,更接近真实纸张
+   - 降低饱和度,减轻视觉疲劳
+   - 提高文字对比度,增强可读性
+   
+   特性:
+   - CSS Grid 固定页面布局 (A4 标准)
+   - 完整数学字体支持 (拉丁/希腊/希伯来字母)
+   - Emoji/图标/图片/Mermaid/思维导图渲染
+   ============================================================ */
    康奈尔笔记 (Cornell Notes) 样式 v2.2
    
    基于 Cornell 大学官方指南的标准比例:
@@ -42,6 +59,11 @@
   --notes-width: 70%;
   --summary-height: 18%;
   --header-height: auto;
+
+  /* ─── 间距系统 ─── */
+  --notes-width: 70%;
+  --summary-height: 18%;
+  --header-height: auto;
   /* ─── 布局尺寸 ─── */
   --page-width: 176mm;
   --page-height: 250mm;
@@ -66,7 +88,46 @@
   --radius-lg: 14px;
   --radius-xl: 20px;
 
-  /* ─── 主色调 (清新淡雅自然绿系) ─── */
+  /* ─── 主色调 (柔和学术绿系 - 优化版) ─── */
+  /* 降低饱和度,提高可读性 */
+  --color-primary: #5a7a65;
+  --color-primary-light: #8ba396;
+  --color-primary-dark: #3d5a48;
+
+  --color-secondary: #6b8294;
+  --color-accent: #b8956e;
+  --color-success: #7da87d;
+  --color-warning: #d4b896;
+  --color-info: #7a9ab8;
+  --color-danger: #b87a7a;
+
+  /* ─── 康奈尔区域色彩 - 柔和米色系 ─── */
+  /* 更温暖,更像真实纸张 */
+  --cue-bg-start: #faf8f4;
+  --cue-bg-end: #f2ede5;
+  --cue-border: rgba(180, 160, 130, 0.3);
+  --cue-accent: #8b7355;
+
+  --notes-bg: #fdfcfa;
+  --notes-accent: #5a7a65;
+
+  --summary-bg-start: #f5f2eb;
+  --summary-bg-end: #ebe7df;
+  --summary-border: rgba(90, 122, 101, 0.25);
+  --summary-accent: #5a7a65;
+
+  /* ─── 文本色彩 - 提高对比度 ─── */
+  /* 主文字更深,更易读 */
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #7a7a7a;
+  --text-inverse: #fdfcfa;
+
+  /* ─── 边框与分隔线 ─── */
+  --border-color: #d8d4cd;
+  --border-width: 2px;
+  --divider-dot-size: 2px;
+  --divider-gap-size: 6px;
   --color-primary: #7c9885;
   --color-primary-light: #a8c5b4;
   --color-primary-dark: #5a7a68;
@@ -226,6 +287,31 @@ body::after {
 }
 
 /* ─── 头部区域 ─── */
+.article-header {
+  grid-area: header;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    var(--color-primary) 50%,
+    var(--color-primary-dark) 100%
+  );
+  color: var(--text-inverse);
+  padding: var(--space-lg) var(--space-xl);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 头部简洁装饰线 */
+.article-header::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+}
 .article-header {
   grid-area: header;
   background: linear-gradient(
@@ -671,6 +757,34 @@ code {
 
 /* 代码块 */
 pre {
+  background: linear-gradient(180deg, #2d3436 0%, #1e2324 100%);
+  color: #dfe6e9;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  margin: var(--space-md) 0;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  page-break-inside: avoid;
+}
+
+/* 代码块窗口按钮装饰 - 更柔和 */
+pre::before {
+  content: '';
+  position: absolute;
+  top: 0.5em;
+  left: 0.8em;
+  width: 8px;
+  height: 8px;
+  background: #b87a7a;
+  border-radius: 50%;
+  box-shadow:
+    14px 0 0 #d4b896,
+    28px 0 0 #7da87d;
+}
+pre {
   background: linear-gradient(180deg, #2f3d3d 0%, #243131 100%);
   color: #e0e8e4;
   border-radius: var(--radius-md);
@@ -683,6 +797,8 @@ pre {
   position: relative;
   page-break-inside: avoid;
 }
+
+pre code {
 
 /* 代码块窗口按钮装饰 */
 pre::before {
