@@ -1,10 +1,12 @@
 {
   "name": "md2journal",
-  "version": "1.0.0",
-  "description": "Markdown → 中文期刊 PDF 批量自动转换工具",
+  "version": "1.1.3",
+  "description": "Markdown → 中文期刊 PDF 批量自动转换工具，支持 Windows/macOS/Linux",
   "type": "module",
   "bin": {
-    "md2journal": "./cli.js"
+    "md2journal": "./cli.js",
+    "md2journal-cli": "./cli.js",
+    "md2journal-gui": "./gui.js"
   },
   "scripts": {
     "test": "vitest",

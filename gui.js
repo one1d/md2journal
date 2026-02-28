@@ -145,7 +145,31 @@ function parseBody(req) {
   });
 }
 
+// ─── 跨平台工具函数 ────────────────────────────────
+
+/** 获取平台兼容的 Puppeteer 启动参数 */
+function getPuppeteerArgs() {
+  const args = ['--no-sandbox'];
+  if (process.platform === 'linux') {
+    args.push('--disable-setuid-sandbox');
+  }
+  return args;
+}
+
 // ─── Puppeteer 浏览器实例池 ────────────────────────────
+
+let browserInstance = null;
+
+async function getBrowser() {
+  if (!browserInstance) {
+    const puppeteer = (await import('puppeteer')).default;
+    browserInstance = await puppeteer.launch({
+      headless: true,
+      args: getPuppeteerArgs()
+    });
+  }
+  return browserInstance;
+}
 
 let browserInstance = null;
 

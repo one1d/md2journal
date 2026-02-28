@@ -10,7 +10,8 @@ import puppeteer from 'puppeteer';
 class BrowserPool {
   constructor(options = {}) {
     this.maxBrowsers = options.maxBrowsers || 3;
-    this.launchOptions = options.launchOptions || {
+    this.maxBrowsers = options.maxBrowsers || 3;
+    this.launchOptions = options.launchOptions || BrowserPool.getDefaultLaunchOptions();
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox']
     };
@@ -93,7 +94,25 @@ class BrowserPool {
       queueLength: this.waitQueue.length,
       closed: this.closed
     };
+      closed: this.closed
+    };
   }
+
+  /**
+   * Get platform-specific default launch options for Puppeteer
+   */
+  static getDefaultLaunchOptions() {
+    const args = ['--no-sandbox'];
+    // Linux 需要 --disable-setuid-sandbox，Windows/macOS 不需要
+    if (process.platform === 'linux') {
+      args.push('--disable-setuid-sandbox');
+    }
+    return {
+      headless: true,
+      args
+    };
+  }
+}
 }
 
 /**

@@ -132,10 +132,39 @@ function buildHtml(body, meta, cssContent, vendorAssets) {
 </html>`;
 }
 
+// ─── 跨平台工具函数 ────────────────────────────────
+
+/** 获取平台兼容的临时目录 */
+function getTempDir() {
+  // Windows: TEMP, TMP, USERPROFILE\AppData\Local\Temp
+  // Unix: TMPDIR, /tmp
+  return process.env.TEMP || process.env.TMP || process.env.TMPDIR || (process.platform === 'win32' ? 'C:\\Windows\\Temp' : '/tmp');
+}
+
+/** 将本地路径转换为 file:// URL，兼容 Windows */
+function pathToFileUrl(filePath) {
+  if (process.platform === 'win32') {
+    // Windows: file:///C:/path/to/file
+    return 'file:///' + filePath.replace(/\\/g, '/');
+  }
+  // Unix: file:///path/to/file
+  return 'file://' + filePath;
+}
+
+/** 获取平台兼容的 Puppeteer 启动参数 */
+function getPuppeteerArgs() {
+  const args = ['--no-sandbox'];
+  // Linux 需要 --disable-setuid-sandbox，Windows/macOS 不需要且可能有问题
+  if (process.platform === 'linux') {
+    args.push('--disable-setuid-sandbox');
+  }
+  return args;
+}
+
 // ─── vendor 资源缓存 ──────────────────────────────────
 
 let vendorAssetsCache = null;
-const VENDOR_CACHE_FILE = path.join(process.env.TMPDIR || '/tmp', 'md2journal-vendor-cache.json');
+const VENDOR_CACHE_FILE = path.join(getTempDir(), 'md2journal-vendor-cache.json');
 
 /** 加载并处理 fontsource 字体 CSS，将相对路径转换为绝对路径 */
 async function loadFontCss(fontPackage, cssFile = 'index.css') {
@@ -143,8 +172,8 @@ async function loadFontCss(fontPackage, cssFile = 'index.css') {
     const fontDir = path.join(__dirname, 'node_modules', fontPackage);
     const cssPath = path.join(fontDir, cssFile);
     let css = await fs.readFile(cssPath, 'utf-8');
-    // 将相对路径 url(./files/...) 转换为绝对路径 url(file://...)
-    css = css.replace(/url\(\.\//g, `url(file://${fontDir}/`);
+    // 将相对路径 url(./files/...) 转换为 file:// URL（兼容 Windows）
+    css = css.replace(/url\(\.\//g, `url(${pathToFileUrl(fontDir)}/`);
     return css;
   } catch {
     return '';
@@ -267,7 +296,7 @@ export async function convert(inputPath, outputPath, options = {}) {
   // 6. Puppeteer 渲染 PDF
   const browser = options.browser || (await (await import('puppeteer')).default.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: getPuppeteerArgs(),
   }));
   const ownBrowser = !options.browser;
 
@@ -370,7 +399,7 @@ export async function batchConvert(inputDir, outputDir, options = {}) {
   const puppeteer = (await import('puppeteer')).default;
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: getPuppeteerArgs(),
   });
 
   const results = [];
