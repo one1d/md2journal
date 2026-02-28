@@ -1,0 +1,1358 @@
+/* ============================================================
+   常规 A4 全幅排版样式 (Normal A4) v1.0
+   
+   特性:
+   - 标准 A4 纸张全幅利用 (210mm x 297mm)
+   - 清新淡雅自然绿系配色
+   - 适配 A4 幅面的字体与间距
+   - 完整数学字体支持 (拉丁/希腊/希伯来字母)
+   - Emoji/图标/图片/Mermaid/思维导图渲染
+   - 优化的分页控制与打印输出
+   ============================================================ */
+
+/* ═══════════════════════════════════════════════════════════
+   第一部分: CSS 变量定义
+   ═══════════════════════════════════════════════════════════ */
+
+:root {
+  /* ─── 布局尺寸 (A4 全幅) ─── */
+  --page-width: 210mm;
+  --page-height: 297mm;
+  --page-margin: 0;
+  --content-width: 174mm;  /* 210 - 18*2 */
+  --content-height: 267mm; /* 297 - 15*2 */
+  
+  --cue-width: 28%;
+  --notes-width: 72%;
+  --summary-height: 15%;
+  --header-height: auto;
+  
+  /* ─── 间距系统 (A4 适配) ─── */
+  --space-xs: 0.4em;
+  --space-sm: 0.8em;
+  --space-md: 1.2em;
+  --space-lg: 1.8em;
+  --space-xl: 2.2em;
+  
+  /* ─── 圆角 ─── */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  
+  /* ─── 主色调 (清新淡雅自然绿系) ─── */
+  --color-primary: #7C9885;
+  --color-primary-light: #A8C5B4;
+  --color-primary-dark: #5A7A68;
+  
+  --color-secondary: #8FA3B0;
+  --color-accent: #D4A574;
+  --color-success: #9BC4A0;
+  --color-warning: #E4C087;
+  --color-info: #A3B9D1;
+  --color-danger: #D19D9D;
+  
+  /* ─── 康奈尔区域色彩 ─── */
+  --cue-bg-start: #F9F7F3;
+  --cue-bg-end: #F3EFE8;
+  --cue-border: rgba(212, 165, 116, 0.4);
+  --cue-accent: #D4A574;
+  
+  --notes-bg: #FEFEFE;
+  --notes-accent: #7C9885;
+  
+  --summary-bg-start: #F0F4F1;
+  --summary-bg-end: #E6EDE8;
+  --summary-border: rgba(124, 152, 133, 0.4);
+  --summary-accent: #7C9885;
+  
+  /* ─── 文本色彩 ─── */
+  --text-primary: #2C3E3E;
+  --text-secondary: #5A6D6D;
+  --text-muted: #9BAFAB;
+  --text-inverse: #ffffff;
+  
+  /* ─── 边框与分隔线 ─── */
+  --border-color: #E0E8E4;
+  --border-width: 2px;
+  --divider-dot-size: 3px;
+  --divider-gap-size: 8px;
+  
+  /* ─── 阴影 ─── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-inner: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+  
+  /* ─── 字体 ─── */
+  --font-sans: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", -apple-system, sans-serif;
+  --font-serif: "Songti SC", "Noto Serif CJK SC", "SimSun", Georgia, serif;
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", Menlo, monospace;
+  --font-emoji: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  
+  /* ─── 数学字体 (完整链) ─── */
+  --font-math: "KaTeX_Main", "KaTeX_Math", "KaTeX_AMS", 
+               "Latin Modern Math", "STIX Two Math", "Cambria Math",
+               "DejaVu Math TeX Gyre", "Apple Symbols", 
+               "Asana Math", "XITS Math", serif;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第二部分: 页面与基础设置
+   ═══════════════════════════════════════════════════════════ */
+
+@page {
+  size: A4;
+  margin: 0;
+}
+
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 12pt;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+  background: #FEFEFE;
+  padding: 15mm 18mm;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第三部分: 康奈尔笔记 CSS Grid 布局
+   ═══════════════════════════════════════════════════════════ */
+
+/* 康奈尔笔记页面容器 */
+.cornell-page {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "header"
+    "main"
+    "summary";
+  max-width: var(--content-width);
+  margin: 0 auto;
+  background: var(--notes-bg);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  page-break-inside: avoid;
+}
+
+/* 主内容区域 (Cue + Notes 两栏) */
+.cornell-main {
+  grid-area: main;
+  display: grid;
+  grid-template-columns: var(--cue-width) var(--notes-width);
+  min-height: 0;
+}
+
+/* ─── 头部区域 ─── */
+.article-header {
+  grid-area: header;
+  background: linear-gradient(135deg, 
+    var(--color-primary) 0%, 
+    var(--color-secondary) 50%, 
+    var(--color-accent) 100%);
+  color: var(--text-inverse);
+  padding: var(--space-xl) var(--space-xl);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 头部装饰光效 */
+.article-header::before {
+  content: "";
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: radial-gradient(circle at center, 
+    rgba(255,255,255,0.15) 0%, 
+    transparent 50%);
+  animation: header-glow 8s ease-in-out infinite;
+}
+
+@keyframes header-glow {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(20%, 20%); }
+}
+
+.article-title {
+  font-family: var(--font-sans);
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin-bottom: var(--space-xs);
+  text-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  position: relative;
+  z-index: 1;
+}
+
+.article-author {
+  font-size: 1.05rem;
+  font-weight: 500;
+  opacity: 0.95;
+  margin-bottom: var(--space-xs);
+  position: relative;
+  z-index: 1;
+}
+
+.article-date {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  position: relative;
+  z-index: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第四部分: Cue 提示栏 (左侧)
+   ═══════════════════════════════════════════════════════════ */
+
+.cue-column {
+  background: linear-gradient(180deg, var(--cue-bg-start) 0%, var(--cue-bg-end) 100%);
+  padding: var(--space-lg) var(--space-md);
+  position: relative;
+  overflow-y: auto;
+}
+
+/* Cue 栏标签 */
+.cue-column::before {
+  content: "Cue / Keywords";
+  display: block;
+  background: linear-gradient(90deg, var(--cue-accent) 0%, #C49462 100%);
+  color: var(--text-inverse);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: var(--space-xs) var(--space-sm);
+  margin: calc(-1 * var(--space-lg)) calc(-1 * var(--space-md)) var(--space-md);
+  text-align: center;
+}
+
+/* ┊ Cue/Notes 垂直虚线分隔 ┊ */
+.cue-column::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: var(--divider-dot-size);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--cue-border) 0px,
+    var(--cue-border) var(--divider-dot-size),
+    transparent var(--divider-dot-size),
+    transparent calc(var(--divider-dot-size) + var(--divider-gap-size))
+  );
+  box-shadow: 1px 0 3px rgba(212, 165, 116, 0.15);
+}
+
+/* Cue 项目卡片 */
+.cue-item {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-sm);
+  border-left: 4px solid var(--cue-accent);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cue-item:hover {
+  transform: translateX(3px);
+  box-shadow: var(--shadow-md);
+}
+
+.cue-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--cue-accent);
+  margin-bottom: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.cue-content {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第五部分: Notes 笔记栏 (右侧)
+   ═══════════════════════════════════════════════════════════ */
+
+.notes-column,
+.article-body {
+  background: var(--notes-bg);
+  padding: var(--space-lg) var(--space-xl);
+  position: relative;
+  overflow-y: auto;
+}
+
+/* Notes 栏标签 */
+.notes-column::before,
+.article-body::before {
+  content: "Notes / Content";
+  display: block;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: var(--text-inverse);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: var(--space-xs) var(--space-sm);
+  margin: calc(-1 * var(--space-lg)) calc(-1 * var(--space-xl)) var(--space-md);
+  text-align: center;
+}
+
+/* ─── 文本内容区域无底纹 ─── */
+.notes-column .lined-bg,
+.article-body {
+  background-image: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第六部分: Summary 总结栏 (底部)
+   ═══════════════════════════════════════════════════════════ */
+
+.summary-section {
+  grid-area: summary;
+  background: linear-gradient(135deg, var(--summary-bg-start) 0%, var(--summary-bg-end) 100%);
+  padding: var(--space-lg) var(--space-xl);
+  position: relative;
+  min-height: 80px;
+}
+
+/* ┈ Summary 水平虚线分隔 ┈ */
+.summary-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: var(--space-md);
+  right: var(--space-md);
+  height: var(--divider-dot-size);
+  background: repeating-linear-gradient(
+    to right,
+    var(--summary-border) 0px,
+    var(--summary-border) calc(var(--divider-dot-size) + 1px),
+    transparent calc(var(--divider-dot-size) + 1px),
+    transparent calc(var(--divider-dot-size) * 2 + var(--divider-gap-size))
+  );
+  box-shadow: 0 1px 3px rgba(124, 152, 133, 0.1);
+}
+
+/* Summary 标签 */
+.summary-section::after {
+  content: "Summary";
+  position: absolute;
+  top: calc(-0.5em - 2px);
+  left: var(--space-xl);
+  background: linear-gradient(90deg, var(--summary-accent) 0%, var(--color-secondary) 100%);
+  color: var(--text-inverse);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  padding: 0.2em 0.8em;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-sm);
+}
+
+.summary-content {
+  margin-top: var(--space-sm);
+  font-size: 1rem;
+  color: #3D5A4A;
+  line-height: 1.7;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第七部分: 摘要与关键词块
+   ═══════════════════════════════════════════════════════════ */
+
+.abstract-block {
+  background: linear-gradient(135deg, #F9F7F3 0%, #F3EFE8 100%);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-lg);
+  border-left: 5px solid var(--color-warning);
+  box-shadow: var(--shadow-sm);
+}
+
+.abstract-block .label {
+  font-weight: 700;
+  color: #8A6D3B;
+  font-size: 0.95rem;
+}
+
+.abstract-block p {
+  color: #6B5530;
+  text-indent: 0;
+  margin-top: var(--space-xs);
+}
+
+.keywords-block {
+  background: linear-gradient(135deg, #F0F5F2 0%, #E2ECE5 100%);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-lg);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.keywords-block .label {
+  font-weight: 700;
+  color: #3D6B4F;
+  font-size: 0.95rem;
+}
+
+.keyword-tag {
+  background: linear-gradient(135deg, var(--color-success) 0%, #7FB88A 100%);
+  color: white;
+  padding: 0.2em 0.7em;
+  border-radius: var(--radius-xl);
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: 0 2px 4px rgba(124, 152, 133, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第八部分: 标题层级 (柔和色彩)
+   ═══════════════════════════════════════════════════════════ */
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: 1.35;
+  margin-top: var(--space-xl);
+  margin-bottom: var(--space-sm);
+  page-break-after: avoid;
+}
+
+/* H1 - 主标题 */
+h1 {
+  font-size: 1.6rem;
+  background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  padding-left: var(--space-md);
+  border-left: 5px solid;
+  border-image: linear-gradient(180deg, var(--color-primary), var(--color-secondary)) 1;
+  margin-left: calc(-1 * var(--space-md));
+}
+
+/* H2 - 章节标题 */
+h2 {
+  font-size: 1.35rem;
+  color: var(--color-secondary);
+  padding-bottom: var(--space-xs);
+  border-bottom: 2px solid;
+  border-image: linear-gradient(90deg, var(--color-secondary), transparent) 1;
+  position: relative;
+  padding-left: var(--space-md);
+}
+
+h2::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 8px;
+  background: var(--color-secondary);
+  border-radius: 50%;
+}
+
+/* H3 - 小节标题 */
+h3 {
+  font-size: 1.15rem;
+  color: var(--color-accent);
+  padding-left: var(--space-md);
+  position: relative;
+}
+
+h3::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+
+/* H4-H6 */
+h4 {
+  font-size: 1.05rem;
+  color: var(--color-success);
+  padding-left: var(--space-sm);
+  border-left: 3px solid var(--color-success);
+}
+
+h5 {
+  font-size: 1rem;
+  color: var(--color-info);
+}
+
+h6 {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第九部分: 段落与文本样式
+   ═══════════════════════════════════════════════════════════ */
+
+p {
+  margin-bottom: var(--space-sm);
+  text-align: justify;
+  hyphens: auto;
+}
+
+/* 标题后首段不缩进 */
+h1 + p, h2 + p, h3 + p, h4 + p, h5 + p, h6 + p,
+.abstract-block p,
+blockquote p:first-child {
+  text-indent: 0;
+}
+
+/* 强调文本 */
+strong, b {
+  color: #5A7A68;
+  font-weight: 700;
+}
+
+em, i {
+  color: #C49462;
+  font-style: italic;
+}
+
+mark {
+  background: linear-gradient(120deg, #FFF8E1 0%, #FFECB3 100%);
+  padding: 0.1em 0.3em;
+  border-radius: 3px;
+}
+
+/* 链接 */
+a {
+  color: var(--color-info);
+  text-decoration: none;
+  border-bottom: 1px dashed currentColor;
+  transition: all 0.2s ease;
+}
+
+a:hover {
+  color: var(--color-primary);
+  border-bottom-style: solid;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十部分: 代码与代码块
+   ═══════════════════════════════════════════════════════════ */
+
+/* 行内代码 */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: linear-gradient(135deg, #F2F5F3 0%, #E5ECE8 100%);
+  color: #5A7A68;
+  padding: 0.15em 0.45em;
+  border-radius: var(--radius-sm);
+  border: 1px solid #D1DDD6;
+}
+
+/* 代码块 */
+pre {
+  background: linear-gradient(180deg, #2F3D3D 0%, #243131 100%);
+  color: #E0E8E4;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg) var(--space-lg) var(--space-md);
+  margin: var(--space-md) 0;
+  overflow-x: auto;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  page-break-inside: avoid;
+}
+
+/* 代码块窗口按钮装饰 */
+pre::before {
+  content: "";
+  position: absolute;
+  top: 0.7em;
+  left: 1em;
+  width: 10px;
+  height: 10px;
+  background: #D19D9D;
+  border-radius: 50%;
+  box-shadow: 16px 0 0 #E4C087, 32px 0 0 #9BC4A0;
+}
+
+pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十一部分: 引用块 (多类型)
+   ═══════════════════════════════════════════════════════════ */
+
+blockquote {
+  background: linear-gradient(90deg, #F0F5F2 0%, #E5EDE8 100%);
+  border-left: 5px solid var(--color-success);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: var(--space-md) var(--space-lg);
+  margin: var(--space-md) 0;
+  box-shadow: var(--shadow-sm);
+}
+
+blockquote p {
+  text-indent: 0;
+  color: #3D5A4A;
+}
+
+/* 提示引用 */
+blockquote.tip,
+blockquote:has(strong:first-child:contains("Tip")),
+blockquote:has(strong:first-child:contains("提示")) {
+  background: linear-gradient(90deg, #EBF0F5 0%, #E0E9F0 100%);
+  border-left-color: var(--color-info);
+}
+
+blockquote.tip p,
+blockquote:has(strong:first-child:contains("Tip")) p {
+  color: #4A6E8C;
+}
+
+/* 警告引用 */
+blockquote.warning,
+blockquote:has(strong:first-child:contains("Warning")),
+blockquote:has(strong:first-child:contains("注意")) {
+  background: linear-gradient(90deg, #FAF6EE 0%, #F5EDDF 100%);
+  border-left-color: var(--color-warning);
+}
+
+blockquote.warning p {
+  color: #8A6D3B;
+}
+
+/* 危险引用 */
+blockquote.danger,
+blockquote:has(strong:first-child:contains("Danger")),
+blockquote:has(strong:first-child:contains("危险")) {
+  background: linear-gradient(90deg, #F8F0F0 0%, #F0E0E0 100%);
+  border-left-color: var(--color-danger);
+}
+
+blockquote.danger p {
+  color: #8B5A5A;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十二部分: 表格
+   ═══════════════════════════════════════════════════════════ */
+
+table {
+  width: 100%;
+  max-width: 100%;
+  border-collapse: collapse;
+  margin: var(--space-md) 0;
+  font-size: 0.95rem;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  page-break-inside: avoid;
+}
+
+thead {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: var(--text-inverse);
+}
+
+th {
+  padding: var(--space-sm) var(--space-md);
+  font-weight: 600;
+  text-align: center;
+}
+
+td {
+  padding: var(--space-sm) var(--space-md);
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+tbody tr:nth-child(odd) {
+  background: #ffffff;
+}
+
+tbody tr:nth-child(even) {
+  background: #F7FAF8;
+}
+
+tbody tr:hover {
+  background: linear-gradient(90deg, #EEF3F0 0%, #F2F7F4 100%);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十三部分: 列表 (柔和标记)
+   ═══════════════════════════════════════════════════════════ */
+
+ul, ol {
+  margin: var(--space-sm) 0 var(--space-sm) var(--space-xl);
+}
+
+li {
+  margin-bottom: var(--space-xs);
+}
+
+ul > li::marker {
+  color: var(--color-primary);
+  font-size: 1.1em;
+}
+
+ol > li::marker {
+  color: var(--color-secondary);
+  font-weight: 700;
+}
+
+/* 嵌套列表颜色 */
+ul ul > li::marker { color: var(--color-accent); }
+ul ul ul > li::marker { color: var(--color-success); }
+ol ol > li::marker { color: var(--color-warning); }
+
+/* 任务列表 */
+li input[type="checkbox"] {
+  margin-right: var(--space-xs);
+  accent-color: var(--color-success);
+  width: 1.1em;
+  height: 1.1em;
+  vertical-align: middle;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十四部分: 图片与图注
+   ═══════════════════════════════════════════════════════════ */
+
+img {
+  max-width: 100%;
+  max-height: 240mm;
+  height: auto;
+  display: block;
+  margin: var(--space-md) auto;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  object-fit: contain;
+}
+
+figure {
+  text-align: center;
+  margin: var(--space-lg) 0;
+  page-break-inside: avoid;
+}
+
+figcaption {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: var(--space-sm);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十五部分: 水平分割线
+   ═══════════════════════════════════════════════════════════ */
+
+hr {
+  border: none;
+  height: 3px;
+  margin: var(--space-xl) 0;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    var(--color-primary) 20%, 
+    var(--color-secondary) 50%, 
+    var(--color-accent) 80%, 
+    transparent 100%);
+  border-radius: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十六部分: 数学公式 (KaTeX) - 完整字体支持
+   ═══════════════════════════════════════════════════════════ */
+
+/* KaTeX 根容器 - 完整字体链 */
+.katex {
+  font-family: var(--font-math);
+  font-size: 1.1em;
+  line-height: 1.2;
+}
+
+/* 行间公式容器 */
+.katex-display {
+  margin: var(--space-md) 0;
+  padding: var(--space-md) var(--space-lg);
+  background: linear-gradient(135deg, #F5F8F6 0%, #EEF3EF 50%, #E5ECE8 100%);
+  border: 1px solid #D1DDD6;
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  max-width: 100%;
+  box-shadow: var(--shadow-sm), inset 0 1px 2px rgba(124, 152, 133, 0.05);
+}
+
+/* 行间公式居中 */
+.katex-display > .katex {
+  display: block;
+  text-align: center;
+}
+
+/* 行内公式 - 轻微背景 */
+span.katex:not(.katex-display .katex) {
+  background: linear-gradient(135deg, #F5F8F6 0%, #EEF3EF 100%);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  border: 1px solid rgba(209, 221, 214, 0.5);
+}
+
+/* 确保数学变量使用斜体 */
+.katex .mathnormal {
+  font-family: "KaTeX_Math", var(--font-math);
+  font-style: italic;
+}
+
+/* 希腊字母样式 */
+.katex .mord.mathnormal {
+  font-family: "KaTeX_Math", "KaTeX_Main", var(--font-math);
+}
+
+/* AMS 符号 (希伯来字母、黑板粗体等) */
+.katex .amsrm,
+.katex .mathbb {
+  font-family: "KaTeX_AMS", var(--font-math);
+}
+
+/* 花体字母 */
+.katex .mathcal {
+  font-family: "KaTeX_Caligraphic", var(--font-math);
+}
+
+/* 手写体 */
+.katex .mathscr {
+  font-family: "KaTeX_Script", var(--font-math);
+}
+
+/* 哥特体/Fraktur */
+.katex .mathfrak {
+  font-family: "KaTeX_Fraktur", var(--font-math);
+}
+
+/* 等宽体 */
+.katex .mathtt {
+  font-family: "KaTeX_Typewriter", var(--font-mono);
+}
+
+/* 无衬线 */
+.katex .mathsf {
+  font-family: "KaTeX_SansSerif", var(--font-sans);
+}
+
+/* 大型运算符 (积分、求和等) */
+.katex .mop,
+.katex .op-symbol {
+  font-family: "KaTeX_Size2", "KaTeX_Size1", var(--font-math);
+}
+
+/* 分隔符 (括号、根号等) */
+.katex .delimsizing {
+  font-family: "KaTeX_Size4", "KaTeX_Size3", "KaTeX_Size2", "KaTeX_Size1", var(--font-math);
+}
+
+/* 公式编号 */
+.katex .tag {
+  font-family: var(--font-sans);
+  font-size: 0.85em;
+  color: var(--text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十七部分: MathML 公式支持
+   ═══════════════════════════════════════════════════════════ */
+
+math {
+  font-family: var(--font-math);
+  font-size: 1.1em;
+  color: #3D5A4A;
+}
+
+math[display="block"] {
+  display: block;
+  text-align: center;
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  background: linear-gradient(135deg, #F5F8F6 0%, #EEF3EF 100%);
+  border-radius: var(--radius-md);
+}
+
+/* MathML 变量 */
+math mi {
+  font-style: italic;
+}
+
+/* MathML 运算符 */
+math mo {
+  padding: 0 0.1em;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十八部分: Mermaid 图表
+   ═══════════════════════════════════════════════════════════ */
+
+.mermaid {
+  text-align: center;
+  margin: var(--space-lg) 0;
+  padding: var(--space-lg);
+  background: linear-gradient(135deg, #F0F6F2 0%, #E0EDE4 50%, #D0E0D5 100%);
+  border: 2px solid #A8D4B4;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  page-break-inside: avoid;
+  max-width: 100%;
+}
+
+.mermaid svg {
+  max-width: 100%;
+  max-height: 240mm;
+  height: auto;
+}
+
+/* Mermaid 节点美化 */
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon {
+  fill: #D5E8DA !important;
+  stroke: var(--color-secondary) !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .edgePath path {
+  stroke: var(--color-primary) !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .edgeLabel {
+  background: #F3EFE8 !important;
+  color: #8A6D3B !important;
+  padding: 2px 6px !important;
+  border-radius: 4px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第十九部分: 思维导图
+   ═══════════════════════════════════════════════════════════ */
+
+.mindmap {
+  text-align: center;
+  margin: var(--space-lg) 0;
+  padding: var(--space-xl);
+  background: linear-gradient(135deg, #FDFCF8 0%, #F9F5ED 50%, #F3EFE2 100%);
+  border: 2px dashed #E4C087;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.mindmap-node {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  margin: var(--space-xs);
+  border-radius: var(--radius-xl);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease;
+}
+
+.mindmap-node:hover {
+  transform: scale(1.05);
+}
+
+.mindmap-node.level-0 {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  color: white;
+  font-size: 1.15rem;
+  padding: var(--space-md) var(--space-lg);
+  font-weight: 700;
+}
+
+.mindmap-node.level-1 {
+  background: linear-gradient(135deg, #C5D8CA 0%, #A8C5B4 100%);
+  color: #2C4A36;
+}
+
+.mindmap-node.level-2 {
+  background: linear-gradient(135deg, #F5E6C8 0%, #EDDA9E 100%);
+  color: #6B5530;
+}
+
+.mindmap-node.level-3 {
+  background: linear-gradient(135deg, #C5E0D0 0%, #A0D4B0 100%);
+  color: #2C5A3E;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第二十部分: Emoji 与图标
+   ═══════════════════════════════════════════════════════════ */
+
+/* Emoji 基础样式 */
+.emoji {
+  font-family: var(--font-emoji);
+  font-style: normal;
+  font-weight: normal;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Emoji 尺寸变体 */
+.emoji-sm { font-size: 1em; }
+.emoji-md { font-size: 1.5em; }
+.emoji-lg { font-size: 2em; }
+.emoji-xl { font-size: 3em; }
+.emoji-2xl { font-size: 4em; }
+
+/* Emoji 容器 */
+.emoji-container {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+/* 图标徽章 */
+.icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8em;
+  height: 1.8em;
+  border-radius: 50%;
+  font-size: 0.9em;
+}
+
+.icon-badge.primary { 
+  background: linear-gradient(135deg, #D5E8DA 0%, #C0DCCA 100%); 
+  color: var(--color-primary); 
+}
+.icon-badge.success { 
+  background: linear-gradient(135deg, #D5ECD8 0%, #BBE0C0 100%); 
+  color: #3D6B4F; 
+}
+.icon-badge.warning { 
+  background: linear-gradient(135deg, #F5E6C8 0%, #EDDA9E 100%); 
+  color: #8A6D3B; 
+}
+.icon-badge.danger { 
+  background: linear-gradient(135deg, #F0D4D4 0%, #E8BCBC 100%); 
+  color: #8B5A5A; 
+}
+.icon-badge.info { 
+  background: linear-gradient(135deg, #D4E3F0 0%, #BDD4E8 100%); 
+  color: #4A6E8C; 
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第二十一部分: 笔记卡片与特殊容器
+   ═══════════════════════════════════════════════════════════ */
+
+.note-card {
+  background: white;
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  margin: var(--space-md) 0;
+  box-shadow: var(--shadow-md);
+  border-top: 4px solid var(--color-primary);
+}
+
+.note-card.important {
+  border-top-color: var(--color-accent);
+  background: linear-gradient(180deg, #FBF8F4 0%, white 15%);
+}
+
+.note-card.tip {
+  border-top-color: var(--color-success);
+  background: linear-gradient(180deg, #F0F5F2 0%, white 15%);
+}
+
+.note-card.warning {
+  border-top-color: var(--color-warning);
+  background: linear-gradient(180deg, #FDFAF4 0%, white 15%);
+}
+
+.note-card-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: var(--space-sm);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+/* 标签 */
+.tag {
+  display: inline-block;
+  padding: 0.15em 0.6em;
+  border-radius: var(--radius-xl);
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin: 0.1em;
+}
+
+.tag-primary { background: #E5ECE8; color: #5A7A68; }
+.tag-secondary { background: #E8EEF2; color: #6B8494; }
+.tag-accent { background: #F5EDE4; color: #A07850; }
+.tag-success { background: #E2ECE5; color: #3D6B4F; }
+.tag-warning { background: #F5EDDF; color: #8A6D3B; }
+.tag-info { background: #E0EAF2; color: #4A6E8C; }
+
+/* ═══════════════════════════════════════════════════════════
+   第二十二部分: 进度条与时间线
+   ═══════════════════════════════════════════════════════════ */
+
+/* 进度条 */
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #E0E8E4;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: var(--space-sm) 0;
+}
+
+.progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-fill.primary { 
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary)); 
+}
+.progress-fill.success { 
+  background: linear-gradient(90deg, #7FB88A, #9BC4A0); 
+}
+.progress-fill.warning { 
+  background: linear-gradient(90deg, #E4C087, #EDDA9E); 
+}
+
+/* 时间线 */
+.timeline {
+  position: relative;
+  padding-left: var(--space-xl);
+  margin: var(--space-md) 0;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0.5em;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--color-primary), var(--color-secondary), var(--color-accent));
+  border-radius: 2px;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: var(--space-lg);
+  padding-left: var(--space-sm);
+}
+
+.timeline-item::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--space-xl) + 0.25em);
+  top: 0.4em;
+  width: 10px;
+  height: 10px;
+  background: white;
+  border: 3px solid var(--color-primary);
+  border-radius: 50%;
+}
+
+.timeline-item:nth-child(2n)::before { border-color: var(--color-secondary); }
+.timeline-item:nth-child(3n)::before { border-color: var(--color-accent); }
+
+/* ═══════════════════════════════════════════════════════════
+   第二十三部分: 脚注
+   ═══════════════════════════════════════════════════════════ */
+
+.footnotes {
+  margin-top: var(--space-xl);
+  padding-top: var(--space-md);
+  border-top: 2px dashed var(--border-color);
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.footnotes ol {
+  margin-left: var(--space-lg);
+}
+
+.footnotes li {
+  margin-bottom: var(--space-xs);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第二十四部分: 特殊效果
+   ═══════════════════════════════════════════════════════════ */
+
+/* 柔和渐变文字 */
+.rainbow-text {
+  background: linear-gradient(90deg, 
+    #D19D9D, #D4A574, #E4C087, #9BC4A0, #A3B9D1, #8FA3B0, #C4A8B0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 700;
+}
+
+/* 渐变边框 */
+.gradient-border {
+  border: 3px solid transparent;
+  background: 
+    linear-gradient(white, white) padding-box,
+    linear-gradient(135deg, var(--color-primary), var(--color-secondary), var(--color-accent)) border-box;
+  border-radius: var(--radius-md);
+}
+
+/* 高亮闪烁 */
+.highlight-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124, 152, 133, 0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(124, 152, 133, 0); }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第二十五部分: 打印优化
+   ═══════════════════════════════════════════════════════════ */
+
+@media print {
+  html {
+    font-size: 11pt;
+  }
+  
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  body {
+    background: white;
+  }
+  
+  .cornell-page {
+    box-shadow: none;
+    border: 2px solid #5A6D6D;
+    page-break-inside: avoid;
+  }
+  
+  .cornell-main {
+    min-height: calc(267mm - 4cm);
+  }
+  
+  .cue-column,
+  .notes-column,
+  .article-body {
+    break-inside: avoid;
+  }
+  
+  .summary-section {
+    break-before: avoid;
+  }
+  
+  pre, .mermaid, table, figure, .katex-display {
+    break-inside: avoid;
+  }
+  
+  /* 禁用动画 */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  /* 确保颜色打印 */
+  h1, h2, h3, h4, h5, h6,
+  .katex,
+  .mermaid,
+  thead {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  /* 图片清晰度优化 */
+  img, svg {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+  
+  /* 链接显示 URL */
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: var(--text-muted);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   第二十六部分: 分页控制
+   ═══════════════════════════════════════════════════════════ */
+
+/* 强制分页 */
+.page-break-before { page-break-before: always; }
+.page-break-after { page-break-after: always; }
+.no-break { page-break-inside: avoid; }
+
+/* 孤行寡行控制 */
+p, li {
+  orphans: 3;
+  widows: 3;
+}
+
+/* 标题与后续内容绑定 */
+h1, h2, h3, h4, h5, h6 {
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + * {
+  page-break-before: avoid;
+  break-before: avoid;
+}

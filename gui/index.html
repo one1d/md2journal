@@ -1,0 +1,1901 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>md2journal - Markdown 期刊排版工具</title>
+    <style>
+      /* ─── CSS Variables (Apple-inspired) ─────────── */
+      :root {
+        --bg: #f5f5f7;
+        --bg-sidebar: rgba(246, 246, 248, 0.92);
+        --bg-card: #ffffff;
+        --bg-editor: #ffffff;
+        --bg-hover: rgba(0, 0, 0, 0.04);
+        --bg-active: rgba(0, 122, 255, 0.08);
+        --bg-drop: rgba(0, 122, 255, 0.04);
+        --text-primary: #1d1d1f;
+        --text-secondary: #86868b;
+        --text-tertiary: #aeaeb2;
+        --accent: #007aff;
+        --accent-hover: #0066d6;
+        --accent-light: rgba(0, 122, 255, 0.12);
+        --green: #34c759;
+        --green-light: rgba(52, 199, 89, 0.12);
+        --orange: #ff9500;
+        --orange-light: rgba(255, 149, 0, 0.12);
+        --red: #ff3b30;
+        --red-light: rgba(255, 59, 48, 0.12);
+        --purple: #af52de;
+        --purple-light: rgba(175, 82, 222, 0.12);
+        --border: rgba(0, 0, 0, 0.08);
+        --border-strong: rgba(0, 0, 0, 0.12);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+        --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12);
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
+        --sidebar-width: 260px;
+        --titlebar-height: 52px;
+        --font-sans:
+          -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', 'PingFang SC',
+          sans-serif;
+        --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Menlo', monospace;
+        --transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+
+      /* ─── Reset ──────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
+      body {
+        font-family: var(--font-sans);
+        font-size: 13px;
+        color: var(--text-primary);
+        background: var(--bg);
+        -webkit-font-smoothing: antialiased;
+      }
+      button {
+        font-family: inherit;
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+      input,
+      textarea,
+      select {
+        font-family: inherit;
+      }
+
+      /* ─── Layout ─────────────────────────────────── */
+      .app {
+        display: flex;
+        height: 100vh;
+      }
+
+      /* ─── Sidebar ────────────────────────────────── */
+      .sidebar {
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
+        background: var(--bg-sidebar);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-right: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        z-index: 10;
+      }
+      .sidebar-header {
+        height: var(--titlebar-height);
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        gap: 10px;
+        border-bottom: 1px solid var(--border);
+        -webkit-app-region: drag;
+        flex-shrink: 0;
+      }
+      .sidebar-header .app-icon {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, var(--accent), #5856d6);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 14px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .sidebar-header .app-title {
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+      .sidebar-body {
+        flex: 1;
+        overflow-y: auto;
+        padding: 8px 0;
+      }
+      .sidebar-body::-webkit-scrollbar {
+        width: 6px;
+      }
+      .sidebar-body::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.15);
+        border-radius: 3px;
+      }
+
+      .sidebar-section {
+        margin-bottom: 4px;
+      }
+      .sidebar-section-title {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 16px;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .sidebar-section-title:hover {
+        color: var(--text-primary);
+      }
+      .sidebar-section-title .chevron {
+        font-size: 10px;
+        transition: transform 0.2s;
+      }
+      .sidebar-section-title.collapsed .chevron {
+        transform: rotate(-90deg);
+      }
+      .sidebar-section-content.collapsed {
+        display: none;
+      }
+
+      .file-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 16px 6px 24px;
+        cursor: pointer;
+        transition: var(--transition);
+        border-radius: 0;
+        position: relative;
+      }
+      .file-item:hover {
+        background: var(--bg-hover);
+      }
+      .file-item.active {
+        background: var(--bg-active);
+        color: var(--accent);
+      }
+      .file-item.active::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 4px;
+        bottom: 4px;
+        width: 3px;
+        background: var(--accent);
+        border-radius: 0 2px 2px 0;
+      }
+      .file-item .file-icon {
+        font-size: 14px;
+        flex-shrink: 0;
+        width: 18px;
+        text-align: center;
+      }
+      .file-item .file-name {
+        flex: 1;
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .file-item .file-meta {
+        font-size: 11px;
+        color: var(--text-tertiary);
+        flex-shrink: 0;
+      }
+
+      .sidebar-empty {
+        padding: 12px 24px;
+        font-size: 12px;
+        color: var(--text-tertiary);
+      }
+
+      /* ─── Main Content ───────────────────────────── */
+      .main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+      }
+
+      /* Toolbar */
+      .toolbar {
+        height: var(--titlebar-height);
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        gap: 12px;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-card);
+        flex-shrink: 0;
+      }
+      .toolbar-left {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .toolbar-center {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+      }
+      .toolbar-right {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      /* Segmented Control */
+      .segmented {
+        display: inline-flex;
+        background: var(--bg);
+        border-radius: var(--radius-sm);
+        padding: 2px;
+        gap: 1px;
+      }
+      .segmented button {
+        padding: 5px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 6px;
+        color: var(--text-secondary);
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+      .segmented button:hover {
+        color: var(--text-primary);
+      }
+      .segmented button.active {
+        background: var(--bg-card);
+        color: var(--text-primary);
+        box-shadow:
+          0 1px 3px rgba(0, 0, 0, 0.08),
+          0 0.5px 1px rgba(0, 0, 0, 0.06);
+      }
+
+      /* Buttons */
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        border-radius: var(--radius-sm);
+        transition: var(--transition);
+        white-space: nowrap;
+      }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        transform: scale(1.02);
+      }
+      .btn-primary:active {
+        transform: scale(0.98);
+      }
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+      .btn-secondary {
+        background: var(--bg);
+        color: var(--text-primary);
+        border: 1px solid var(--border);
+      }
+      .btn-secondary:hover {
+        background: var(--bg-hover);
+      }
+      .btn-ghost {
+        color: var(--text-secondary);
+        padding: 6px 8px;
+      }
+      .btn-ghost:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+      }
+      .btn-icon {
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-sm);
+        color: var(--text-secondary);
+      }
+      .btn-icon:hover {
+        background: var(--bg-hover);
+        color: var(--text-primary);
+      }
+
+      /* Style Selector */
+      .style-selector {
+        display: flex;
+        gap: 6px;
+        padding: 0 16px;
+        margin: 8px 0;
+      }
+      .style-chip {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 10px 6px;
+        border-radius: var(--radius-md);
+        border: 2px solid var(--border);
+        cursor: pointer;
+        transition: var(--transition);
+        background: var(--bg-card);
+      }
+      .style-chip:hover {
+        border-color: var(--accent);
+      }
+      .style-chip.active {
+        border-color: var(--accent);
+        background: var(--accent-light);
+      }
+      .style-chip .chip-icon {
+        font-size: 20px;
+      }
+      .style-chip .chip-label {
+        font-size: 10px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-align: center;
+        line-height: 1.2;
+      }
+      .style-chip.active .chip-label {
+        color: var(--accent);
+      }
+
+      /* Content Area */
+      .content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        position: relative;
+      }
+
+      /* Tab Bar */
+      .tab-bar {
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        height: 38px;
+        gap: 0;
+        border-bottom: 1px solid var(--border);
+        background: var(--bg-card);
+        flex-shrink: 0;
+      }
+      .tab {
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        border-bottom: 2px solid transparent;
+        transition: var(--transition);
+        margin-bottom: -1px;
+      }
+      .tab:hover {
+        color: var(--text-primary);
+      }
+      .tab.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
+      .tab-spacer {
+        flex: 1;
+      }
+      .tab-actions {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+
+      /* Editor */
+      .editor-area {
+        flex: 1;
+        display: flex;
+        overflow: hidden;
+      }
+      .editor-area.hidden {
+        display: none;
+      }
+      #editor {
+        width: 100%;
+        height: 100%;
+        padding: 20px 24px;
+        border: none;
+        outline: none;
+        resize: none;
+        font-family: var(--font-mono);
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-primary);
+        background: var(--bg-editor);
+        tab-size: 2;
+      }
+      #editor::placeholder {
+        color: var(--text-tertiary);
+      }
+      #editor::-webkit-scrollbar {
+        width: 8px;
+      }
+      #editor::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.12);
+        border-radius: 4px;
+      }
+
+      /* Preview */
+      .preview-area {
+        flex: 1;
+        overflow-y: auto;
+        padding: 24px 32px;
+        background: var(--bg-card);
+      }
+      .preview-area.hidden {
+        display: none;
+      }
+      .preview-area::-webkit-scrollbar {
+        width: 8px;
+      }
+      .preview-area::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.12);
+        border-radius: 4px;
+      }
+      .preview-content {
+        max-width: 720px;
+        margin: 0 auto;
+        font-size: 15px;
+        line-height: 1.8;
+        color: var(--text-primary);
+      }
+      .preview-content h1 {
+        font-size: 24px;
+        margin: 1em 0 0.5em;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+      .preview-content h2 {
+        font-size: 20px;
+        margin: 1em 0 0.5em;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+      }
+      .preview-content h3 {
+        font-size: 17px;
+        margin: 1em 0 0.5em;
+        font-weight: 600;
+      }
+      .preview-content p {
+        margin: 0.6em 0;
+      }
+      .preview-content code {
+        font-family: var(--font-mono);
+        font-size: 0.9em;
+        background: var(--bg);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+      .preview-content pre {
+        background: #1e1e2e;
+        color: #cdd6f4;
+        padding: 16px 20px;
+        border-radius: var(--radius-sm);
+        overflow-x: auto;
+        margin: 1em 0;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+      .preview-content pre code {
+        background: none;
+        padding: 0;
+        color: inherit;
+      }
+      .preview-content blockquote {
+        border-left: 3px solid var(--accent);
+        padding: 8px 16px;
+        margin: 1em 0;
+        color: var(--text-secondary);
+        background: var(--bg);
+        border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+      }
+      .preview-content table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 1em 0;
+        font-size: 14px;
+      }
+      .preview-content th,
+      .preview-content td {
+        padding: 10px 14px;
+        border: 1px solid var(--border);
+        text-align: left;
+      }
+      .preview-content th {
+        background: var(--bg);
+        font-weight: 600;
+      }
+      .preview-content img {
+        max-width: 100%;
+        border-radius: var(--radius-sm);
+      }
+      .preview-content ul,
+      .preview-content ol {
+        padding-left: 1.5em;
+      }
+      .preview-content li {
+        margin: 0.3em 0;
+      }
+
+      /* Welcome / Drop Zone */
+      .welcome {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+        padding: 40px;
+        text-align: center;
+      }
+      .welcome.hidden {
+        display: none;
+      }
+      .welcome-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, var(--accent-light), var(--purple-light));
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 36px;
+      }
+      .welcome h2 {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+      }
+      .welcome p {
+        font-size: 14px;
+        color: var(--text-secondary);
+        max-width: 360px;
+        line-height: 1.6;
+      }
+      .welcome .drop-hint {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        padding: 32px 48px;
+        border: 2px dashed var(--border-strong);
+        border-radius: var(--radius-lg);
+        color: var(--text-secondary);
+        transition: var(--transition);
+        cursor: pointer;
+      }
+      .welcome .drop-hint:hover,
+      .welcome .drop-hint.dragover {
+        border-color: var(--accent);
+        background: var(--bg-drop);
+        color: var(--accent);
+      }
+      .welcome .drop-hint .drop-icon {
+        font-size: 28px;
+      }
+      .welcome .drop-hint .drop-text {
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .welcome .drop-hint .drop-sub {
+        font-size: 12px;
+        color: var(--text-tertiary);
+      }
+
+      /* Full-page Drop Overlay */
+      .drop-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 122, 255, 0.06);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .drop-overlay.active {
+        display: flex;
+      }
+      .drop-overlay-content {
+        padding: 48px 64px;
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        border: 2px dashed var(--accent);
+        text-align: center;
+      }
+      .drop-overlay-content .drop-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+      .drop-overlay-content h3 {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .drop-overlay-content p {
+        color: var(--text-secondary);
+        font-size: 14px;
+      }
+
+      /* Output Panel */
+      .output-panel {
+        border-top: 1px solid var(--border);
+        background: var(--bg-card);
+        max-height: 240px;
+        overflow-y: auto;
+        flex-shrink: 0;
+      }
+      .output-panel.hidden {
+        display: none;
+      }
+      .output-panel::-webkit-scrollbar {
+        width: 6px;
+      }
+      .output-panel::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.12);
+        border-radius: 3px;
+      }
+      .output-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 20px;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        background: var(--bg-card);
+        z-index: 1;
+      }
+      .output-header h3 {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .output-list {
+        padding: 4px 0;
+      }
+      .output-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 20px;
+        transition: var(--transition);
+      }
+      .output-item:hover {
+        background: var(--bg-hover);
+      }
+      .output-item .out-icon {
+        width: 32px;
+        height: 32px;
+        background: var(--red-light);
+        color: var(--red);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        font-weight: 700;
+        flex-shrink: 0;
+      }
+      .output-item .out-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .output-item .out-name {
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .output-item .out-meta {
+        font-size: 11px;
+        color: var(--text-tertiary);
+        display: flex;
+        gap: 8px;
+      }
+      .output-item .out-actions {
+        display: flex;
+        gap: 2px;
+        flex-shrink: 0;
+      }
+
+      /* Status Bar */
+      .status-bar {
+        height: 28px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        background: var(--bg);
+        border-top: 1px solid var(--border);
+        font-size: 11px;
+        color: var(--text-tertiary);
+        gap: 12px;
+        flex-shrink: 0;
+      }
+      .status-bar .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--green);
+      }
+      .status-spacer {
+        flex: 1;
+      }
+
+      /* Toast */
+      .toast-container {
+        position: fixed;
+        top: 16px;
+        right: 16px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .toast {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        border: 1px solid var(--border);
+        font-size: 13px;
+        min-width: 280px;
+        max-width: 420px;
+        animation: slideIn 0.3s ease;
+      }
+      .toast.success .toast-icon {
+        color: var(--green);
+      }
+      .toast.error .toast-icon {
+        color: var(--red);
+      }
+      .toast.info .toast-icon {
+        color: var(--accent);
+      }
+      .toast-icon {
+        font-size: 16px;
+        flex-shrink: 0;
+      }
+      .toast-text {
+        flex: 1;
+        line-height: 1.4;
+      }
+      .toast-close {
+        font-size: 16px;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        padding: 2px;
+      }
+      .toast-close:hover {
+        color: var(--text-primary);
+      }
+
+      /* Modal */
+      .modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .modal-backdrop.active {
+        display: flex;
+      }
+      .modal {
+        background: var(--bg-card);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-lg);
+        padding: 24px;
+        min-width: 400px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+      }
+      .modal h3 {
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 16px;
+      }
+
+      /* PDF Preview Overlay */
+      .pdf-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        z-index: 3000;
+        display: none;
+        flex-direction: column;
+      }
+      .pdf-overlay.active {
+        display: flex;
+      }
+      .pdf-overlay-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        color: #fff;
+      }
+      .pdf-overlay-header h3 {
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .pdf-overlay-header .btn-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        color: #fff;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+      .pdf-overlay-header .btn-close:hover {
+        background: rgba(255, 255, 255, 0.25);
+      }
+      .pdf-overlay iframe {
+        flex: 1;
+        border: none;
+        margin: 0 20px 20px;
+        border-radius: var(--radius-md);
+      }
+
+      /* Converting Overlay */
+      .converting-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 16px;
+      }
+      .converting-overlay.active {
+        display: flex;
+      }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid var(--border);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .converting-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--text-secondary);
+      }
+
+      /* Badge */
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 10px;
+        gap: 4px;
+      }
+      .badge-blue {
+        background: var(--accent-light);
+        color: var(--accent);
+      }
+      .badge-green {
+        background: var(--green-light);
+        color: var(--green);
+      }
+      .badge-orange {
+        background: var(--orange-light);
+        color: var(--orange);
+      }
+      .badge-purple {
+        background: var(--purple-light);
+        color: var(--purple);
+      }
+
+      /* Animations */
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateX(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateX(0);
+        }
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+      }
+
+      /* Convert Button in sidebar */
+      .sidebar-actions {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .convert-btn {
+        width: 100%;
+        padding: 10px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: var(--radius-sm);
+        background: linear-gradient(135deg, var(--accent), #5856d6);
+        color: #fff;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+      }
+      .convert-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3);
+      }
+      .convert-btn:active {
+        transform: translateY(0);
+      }
+      .convert-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+      .convert-btn.converting {
+        animation: pulse 1.5s ease infinite;
+      }
+
+      /* Hidden file input */
+      .hidden-input {
+        display: none;
+      }
+
+      /* Divider in sidebar */
+      .sidebar-divider {
+        height: 1px;
+        background: var(--border);
+        margin: 4px 16px;
+      }
+
+      /* New file button */
+      .new-file-area {
+        padding: 8px 16px;
+      }
+      .new-file-btn {
+        width: 100%;
+        padding: 6px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        border: 1px dashed var(--border-strong);
+        border-radius: var(--radius-sm);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        transition: var(--transition);
+      }
+      .new-file-btn:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        background: var(--accent-light);
+      }
+
+      /* Multi-select styles */
+      .style-check {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-size: 10px;
+        display: none;
+        align-items: center;
+        justify-content: center;
+      }
+      .style-chip.active .style-check {
+        display: flex;
+      }
+      .style-chip {
+        position: relative;
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .sidebar {
+          display: none;
+        }
+        .app {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Drop Overlay -->
+    <div class="drop-overlay" id="dropOverlay">
+      <div class="drop-overlay-content">
+        <div class="drop-icon">📄</div>
+        <h3>放开以添加文件</h3>
+        <p>支持 .md Markdown 文件</p>
+      </div>
+    </div>
+
+    <!-- PDF Preview Overlay -->
+    <div class="pdf-overlay" id="pdfOverlay">
+      <div class="pdf-overlay-header">
+        <h3 id="pdfTitle">PDF 预览</h3>
+        <div class="btn-close" onclick="closePdfPreview()">✕</div>
+      </div>
+      <iframe id="pdfFrame" src=""></iframe>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- App Layout -->
+    <div class="app">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="app-icon">J</div>
+          <div class="app-title">md2journal</div>
+        </div>
+
+        <div class="sidebar-body">
+          <!-- Format Selection -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title" onclick="toggleSection(this)">
+              <span class="chevron">▼</span> 输出格式
+            </div>
+            <div class="sidebar-section-content">
+              <div class="style-selector" id="styleSelector">
+                <div class="style-chip active" data-style="journal" onclick="toggleStyle(this)">
+                  <div class="style-check">✓</div>
+                  <div class="chip-icon">📰</div>
+                  <div class="chip-label">学术期刊</div>
+                </div>
+                <div class="style-chip" data-style="cornell-notes" onclick="toggleStyle(this)">
+                  <div class="style-check">✓</div>
+                  <div class="chip-icon">📝</div>
+                  <div class="chip-label">康奈尔笔记</div>
+                </div>
+                <div class="style-chip" data-style="normal-a4" onclick="toggleStyle(this)">
+                  <div class="style-check">✓</div>
+                  <div class="chip-icon">📄</div>
+                  <div class="chip-label">通用 A4</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-divider"></div>
+
+          <!-- Input Files -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title" onclick="toggleSection(this)">
+              <span class="chevron">▼</span> 输入文件
+            </div>
+            <div class="sidebar-section-content" id="inputFileList">
+              <div class="sidebar-empty">暂无文件</div>
+            </div>
+            <div class="new-file-area">
+              <button class="new-file-btn" onclick="createNewFile()">
+                <span>+</span> 新建文档
+              </button>
+            </div>
+          </div>
+
+          <div class="sidebar-divider"></div>
+
+          <!-- Demo Files -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title" onclick="toggleSection(this)">
+              <span class="chevron">▼</span> 示例文件
+            </div>
+            <div class="sidebar-section-content" id="demoFileList">
+              <div class="sidebar-empty">加载中...</div>
+            </div>
+          </div>
+
+          <div class="sidebar-divider"></div>
+
+          <!-- Output Files -->
+          <div class="sidebar-section">
+            <div class="sidebar-section-title" onclick="toggleSection(this)">
+              <span class="chevron">▼</span> 输出文件
+            </div>
+            <div class="sidebar-section-content" id="outputFileList">
+              <div class="sidebar-empty">暂无输出</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Convert Button -->
+        <div class="sidebar-actions">
+          <button class="convert-btn" id="convertBtn" onclick="doConvert()" disabled>
+            <span>⚡</span> 转换为 PDF
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="main">
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <button
+              class="btn-icon"
+              onclick="document.getElementById('fileInput').click()"
+              title="打开文件"
+            >
+              📂
+            </button>
+            <button class="btn-icon" onclick="createNewFile()" title="新建文件">✚</button>
+            <button
+              class="btn-icon"
+              onclick="saveFile()"
+              title="保存"
+              id="saveBtn"
+              style="display: none"
+            >
+              💾
+            </button>
+          </div>
+          <div class="toolbar-center">
+            <span
+              id="currentFileName"
+              style="font-size: 13px; font-weight: 500; color: var(--text-secondary)"
+            >
+              未选择文件
+            </span>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-primary" onclick="doConvert()" id="convertBtnTop" disabled>
+              <span>⚡</span> 转换
+            </button>
+          </div>
+        </div>
+
+        <div class="content" id="contentArea">
+          <!-- Tab Bar -->
+          <div class="tab-bar" id="tabBar" style="display: none">
+            <button class="tab active" data-tab="editor" onclick="switchTab('editor')">
+              编辑器
+            </button>
+            <button class="tab" data-tab="preview" onclick="switchTab('preview')">预览</button>
+            <div class="tab-spacer"></div>
+            <div class="tab-actions">
+              <span id="charCount" style="font-size: 11px; color: var(--text-tertiary)"></span>
+            </div>
+          </div>
+
+          <!-- Welcome Screen -->
+          <div class="welcome" id="welcomeScreen">
+            <div class="welcome-icon">✨</div>
+            <h2>md2journal</h2>
+            <p>
+              将 Markdown 文档转换为精美的 PDF 期刊排版，支持学术期刊、康奈尔笔记、通用 A4
+              等多种格式
+            </p>
+            <div
+              class="drop-hint"
+              id="dropHint"
+              onclick="document.getElementById('fileInput').click()"
+            >
+              <div class="drop-icon">📎</div>
+              <div class="drop-text">拖放 Markdown 文件到此处</div>
+              <div class="drop-sub">或点击此处选择文件</div>
+            </div>
+          </div>
+
+          <!-- Editor Area -->
+          <div class="editor-area hidden" id="editorArea">
+            <textarea
+              id="editor"
+              placeholder="在此输入 Markdown 内容...&#10;&#10;支持 YAML Front-matter、LaTeX 公式 ($...$) 和 Mermaid 图表"
+              spellcheck="false"
+            ></textarea>
+          </div>
+
+          <!-- Preview Area -->
+          <div class="preview-area hidden" id="previewArea">
+            <div class="preview-content" id="previewContent"></div>
+          </div>
+
+          <!-- Converting Overlay -->
+          <div class="converting-overlay" id="convertingOverlay">
+            <div class="spinner"></div>
+            <div class="converting-text" id="convertingText">正在转换...</div>
+          </div>
+        </div>
+
+        <!-- Output Panel -->
+        <div class="output-panel hidden" id="outputPanel">
+          <div class="output-header">
+            <h3>转换结果</h3>
+            <button class="btn-ghost" onclick="toggleOutputPanel()" style="font-size: 11px">
+              收起
+            </button>
+          </div>
+          <div class="output-list" id="outputList"></div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+          <div class="status-dot"></div>
+          <span id="statusText">就绪</span>
+          <div class="status-spacer"></div>
+          <span id="statusRight">md2journal v1.0</span>
+        </div>
+      </main>
+    </div>
+
+    <!-- Hidden File Input -->
+    <input
+      type="file"
+      id="fileInput"
+      class="hidden-input"
+      accept=".md,.markdown,.txt"
+      multiple
+      onchange="handleFileInput(event)"
+    />
+
+    <script>
+          // ─── State ────────────────────────────────────
+          const state = {
+            currentFile: null,     // { path, source, content, modified }
+            selectedStyles: ['journal'],
+            inputFiles: [],
+            demoFiles: [],
+            outputFiles: [],
+            converting: false,
+            activeTab: 'editor',
+          };
+
+          // ─── API ──────────────────────────────────────
+          const API = {
+            async get(url) {
+              const res = await fetch(url);
+              if (!res.ok) throw new Error(await res.text());
+              return res.json();
+            },
+            async post(url, data) {
+              const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+              });
+              const json = await res.json();
+              if (json.error) throw new Error(json.error);
+              return json;
+            },
+            async del(url) {
+              const res = await fetch(url, { method: 'DELETE' });
+              return res.json();
+            },
+          };
+
+          // ─── Toast ────────────────────────────────────
+          function showToast(message, type = 'info', duration = 4000) {
+            const container = document.getElementById('toastContainer');
+            const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerHTML = `
+              <span class="toast-icon">${icons[type] || icons.info}</span>
+              <span class="toast-text">${message}</span>
+              <span class="toast-close" onclick="this.parentElement.remove()">✕</span>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, duration);
+          }
+
+          // ─── Sidebar Section Toggle ───────────────────
+          function toggleSection(titleEl) {
+            titleEl.classList.toggle('collapsed');
+            const content = titleEl.nextElementSibling;
+            if (content) content.classList.toggle('collapsed');
+          }
+
+          // ─── Style Selection ──────────────────────────
+          function toggleStyle(chip) {
+            const style = chip.dataset.style;
+            chip.classList.toggle('active');
+
+            state.selectedStyles = [];
+            document.querySelectorAll('.style-chip.active').forEach(c => {
+              state.selectedStyles.push(c.dataset.style);
+            });
+
+            // Ensure at least one style is selected
+            if (state.selectedStyles.length === 0) {
+              chip.classList.add('active');
+              state.selectedStyles.push(style);
+            }
+
+            updateConvertButton();
+          }
+
+          // ─── File Operations ──────────────────────────
+          async function loadFiles() {
+            try {
+              const [inputRes, demoRes, outputRes] = await Promise.all([
+                API.get('/api/files?source=input'),
+                API.get('/api/files?source=demo'),
+                API.get('/api/outputs'),
+              ]);
+              state.inputFiles = inputRes.files;
+              state.demoFiles = demoRes.files;
+              state.outputFiles = outputRes.files;
+              renderFileList('inputFileList', state.inputFiles, 'input');
+              renderFileList('demoFileList', state.demoFiles, 'demo');
+              renderOutputList();
+            } catch (err) {
+              console.error('Failed to load files:', err);
+            }
+          }
+
+          function renderFileList(containerId, files, source) {
+            const container = document.getElementById(containerId);
+            if (files.length === 0) {
+              container.innerHTML = '<div class="sidebar-empty">暂无文件</div>';
+              return;
+            }
+            container.innerHTML = files.map(f => {
+              const isActive = state.currentFile && state.currentFile.path === f.path && state.currentFile.source === source;
+              const safePath = escapeHtml(f.path);
+              const safeName = escapeHtml(f.name);
+              return `<div class="file-item ${isActive ? 'active' : ''}" onclick="openFile('${safePath}', '${source}')" title="${safePath}">
+                <span class="file-icon">📄</span>
+                <span class="file-name">${safeName}</span>
+                <span class="file-meta">${f.sizeText}</span>
+              </div>`;
+            }).join('');
+              const isActive = state.currentFile && state.currentFile.path === f.path && state.currentFile.source === source;
+              return `<div class="file-item ${isActive ? 'active' : ''}" onclick="openFile('${f.path}', '${source}')" title="${f.path}">
+                <span class="file-icon">📄</span>
+                <span class="file-name">${f.name}</span>
+                <span class="file-meta">${f.sizeText}</span>
+              </div>`;
+            }).join('');
+          }
+
+          function renderOutputList() {
+            const container = document.getElementById('outputFileList');
+            if (state.outputFiles.length === 0) {
+              container.innerHTML = '<div class="sidebar-empty">暂无输出</div>';
+              return;
+            }
+            container.innerHTML = state.outputFiles.map(f => {
+              const safePath = escapeHtml(f.path);
+              return `<div class="file-item" onclick="previewPdf('${safePath}')" title="${safePath}">
+                <span class="file-icon" style="color:var(--red)">📕</span>
+                <span class="file-name">${safePath}</span>
+                <span class="file-meta">${f.sizeText}</span>
+              </div>`;
+            }).join('');
+              <div class="file-item" onclick="previewPdf('${f.path}')" title="${f.path}">
+                <span class="file-icon" style="color:var(--red)">📕</span>
+                <span class="file-name">${f.path}</span>
+                <span class="file-meta">${f.sizeText}</span>
+              </div>
+            `).join('');
+          }
+
+          async function openFile(filePath, source) {
+            try {
+              const data = await API.get(`/api/file?path=${encodeURIComponent(filePath)}&source=${source}`);
+              state.currentFile = { path: filePath, source, content: data.content, modified: false };
+
+              document.getElementById('editor').value = data.content;
+              document.getElementById('currentFileName').textContent = filePath;
+              document.getElementById('saveBtn').style.display = source === 'input' ? '' : 'none';
+
+              showEditor();
+              updateCharCount();
+              updateConvertButton();
+              renderPreview();
+
+              // Update active file in sidebar
+              document.querySelectorAll('.file-item').forEach(el => el.classList.remove('active'));
+              // Refresh lists to show active state
+              renderFileList('inputFileList', state.inputFiles, 'input');
+              renderFileList('demoFileList', state.demoFiles, 'demo');
+            } catch (err) {
+              showToast('无法打开文件: ' + err.message, 'error');
+            }
+          }
+
+          function showEditor() {
+            document.getElementById('welcomeScreen').classList.add('hidden');
+            document.getElementById('tabBar').style.display = '';
+            switchTab(state.activeTab);
+          }
+
+          function switchTab(tab) {
+            state.activeTab = tab;
+            document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.getElementById('editorArea').classList.toggle('hidden', tab !== 'editor');
+            document.getElementById('previewArea').classList.toggle('hidden', tab !== 'preview');
+            if (tab === 'preview') renderPreview();
+          }
+
+          function updateCharCount() {
+            const text = document.getElementById('editor').value;
+            const chars = text.length;
+            const lines = text.split('\n').length;
+            document.getElementById('charCount').textContent = `${chars} 字符 · ${lines} 行`;
+          }
+
+          function updateConvertButton() {
+            const hasFile = state.currentFile !== null || document.getElementById('editor').value.trim().length > 0;
+            const hasStyle = state.selectedStyles.length > 0;
+            const enabled = hasFile && hasStyle && !state.converting;
+            document.getElementById('convertBtn').disabled = !enabled;
+            document.getElementById('convertBtnTop').disabled = !enabled;
+          }
+
+          function renderPreview() {
+            const content = document.getElementById('editor').value;
+            if (!content.trim()) {
+              document.getElementById('previewContent').innerHTML = '<p style="color:var(--text-tertiary)">暂无内容可预览</p>';
+              return;
+            }
+
+            // Parse YAML front-matter
+            let body = content;
+            let meta = {};
+            const fmMatch = content.match(/^---\n([\s\S]*?)\n---\n([\s\S]*)$/);
+            if (fmMatch) {
+              // Simple YAML parsing
+              const yamlStr = fmMatch[1];
+              body = fmMatch[2];
+              yamlStr.split('\n').forEach(line => {
+                const m = line.match(/^(\w+):\s*"?(.+?)"?\s*$/);
+                if (m) meta[m[1]] = m[2];
+              });
+            }
+
+            // Simple Markdown to HTML (basic rendering)
+            let html = '';
+            if (meta.title) {
+              html += `<h1>${escapeHtml(meta.title)}</h1>`;
+              if (meta.author) html += `<p style="color:var(--text-secondary);font-size:14px">${escapeHtml(meta.author)}${meta.date ? ' · ' + escapeHtml(meta.date) : ''}</p>`;
+              if (meta.abstract) html += `<blockquote><strong>摘要：</strong>${escapeHtml(meta.abstract)}</blockquote>`;
+              html += '<hr style="border:none;border-top:1px solid var(--border);margin:1em 0">';
+            }
+
+            // Convert markdown to basic HTML
+            html += simpleMarkdown(body);
+            document.getElementById('previewContent').innerHTML = html;
+          }
+
+          function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+          }
+
+          function simpleMarkdown(md) {
+            let html = md
+              // Code blocks
+              .replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${escapeHtml(code.trim())}</code></pre>`)
+              // Headers
+              .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+              .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+              .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+              // Bold and Italic
+              .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.+?)\*/g, '<em>$1</em>')
+              // Inline code
+              .replace(/`([^`]+)`/g, '<code>$1</code>')
+              // Blockquote
+              .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+              // Horizontal rule
+              .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid var(--border);margin:1em 0">')
+              // Unordered list
+              .replace(/^- (.+)$/gm, '<li>$1</li>')
+              // Ordered list
+              .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+              // Tables
+              .replace(/\|(.+)\|/g, (match) => {
+                if (match.match(/^\|[\s-:|]+\|$/)) return '';
+                const cells = match.split('|').filter(c => c.trim());
+                return '<tr>' + cells.map(c => `<td>${escapeHtml(c.trim())}</td>`).join('') + '</tr>';
+              })
+              .replace(/\|(.+)\|/g, (match) => {
+                if (match.match(/^\|[\s-:|]+\|$/)) return '';
+                const cells = match.split('|').filter(c => c.trim());
+                return '<tr>' + cells.map(c => `<td>${c.trim()}</td>`).join('') + '</tr>';
+              })
+              // LaTeX display
+              .replace(/\$\$(.+?)\$\$/gs, '<div style="text-align:center;padding:8px;background:var(--bg);border-radius:6px;margin:8px 0;font-family:serif;font-style:italic">$1</div>')
+              // LaTeX inline
+              .replace(/\$(.+?)\$/g, '<span style="font-family:serif;font-style:italic">$1</span>')
+              // Paragraphs
+              .replace(/\n\n/g, '</p><p>')
+              // Line breaks
+              .replace(/\n/g, '<br>');
+
+            // Wrap loose <li> in <ul>
+            html = html.replace(/(<li>[\s\S]*?<\/li>)+/g, '<ul>$&</ul>');
+            // Wrap loose <tr> in <table>
+            html = html.replace(/(<tr>[\s\S]*?<\/tr>)+/g, '<table>$&</table>');
+
+            return '<p>' + html + '</p>';
+          }
+
+          // ─── File Upload / Drag & Drop ────────────────
+          function handleFileInput(event) {
+            const files = event.target.files;
+            if (files.length > 0) handleFiles(files);
+            event.target.value = '';
+          }
+
+          async function handleFiles(fileList) {
+            for (const file of fileList) {
+              if (!file.name.endsWith('.md') && !file.name.endsWith('.markdown') && !file.name.endsWith('.txt')) {
+                showToast(`不支持的文件格式: ${file.name}`, 'error');
+                continue;
+              }
+
+              const content = await file.text();
+              try {
+                await API.post('/api/file', { filename: file.name, content });
+                showToast(`已添加: ${file.name}`, 'success');
+              } catch (err) {
+                showToast(`上传失败: ${err.message}`, 'error');
+              }
+            }
+            await loadFiles();
+
+            // Open the first file
+            if (fileList.length > 0) {
+              const name = fileList[0].name.replace(/[^a-zA-Z0-9\u4e00-\u9fff._-]/g, '_');
+              await openFile(name, 'input');
+            }
+          }
+
+          // Drag and drop
+          let dragCounter = 0;
+          document.addEventListener('dragenter', (e) => {
+            e.preventDefault();
+            dragCounter++;
+            document.getElementById('dropOverlay').classList.add('active');
+          });
+          document.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dragCounter--;
+            if (dragCounter === 0) document.getElementById('dropOverlay').classList.remove('active');
+          });
+          document.addEventListener('dragover', (e) => e.preventDefault());
+          document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dragCounter = 0;
+            document.getElementById('dropOverlay').classList.remove('active');
+            if (e.dataTransfer.files.length > 0) handleFiles(e.dataTransfer.files);
+          });
+
+          // Drop hint area
+          const dropHint = document.getElementById('dropHint');
+          dropHint.addEventListener('dragenter', () => dropHint.classList.add('dragover'));
+          dropHint.addEventListener('dragleave', () => dropHint.classList.remove('dragover'));
+
+          // ─── Create New File ──────────────────────────
+          async function createNewFile() {
+            const name = prompt('请输入文件名（无需扩展名）:', '新建文档');
+            if (!name) return;
+
+            const filename = name.endsWith('.md') ? name : name + '.md';
+            const template = `---
+      title: "${name.replace('.md', '')}"
+      author: ""
+      date: "${new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}"
+      abstract: ""
+      keywords:
+        - 关键词1
+      ---
+
+      # 引言
+
+      在此输入内容...
+      `;
+
+            try {
+              await API.post('/api/file', { filename, content: template });
+              await loadFiles();
+              await openFile(filename, 'input');
+              showToast('文件已创建', 'success');
+            } catch (err) {
+              showToast('创建失败: ' + err.message, 'error');
+            }
+          }
+
+          // ─── Save File ────────────────────────────────
+          async function saveFile() {
+            if (!state.currentFile) return;
+            const content = document.getElementById('editor').value;
+            try {
+              await API.post('/api/save', { path: state.currentFile.path, source: state.currentFile.source, content });
+              state.currentFile.content = content;
+              state.currentFile.modified = false;
+              showToast('已保存', 'success', 2000);
+            } catch (err) {
+              showToast('保存失败: ' + err.message, 'error');
+            }
+          }
+
+          // Ctrl+S to save
+          document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+              e.preventDefault();
+              saveFile();
+            }
+          });
+
+          // ─── Convert ──────────────────────────────────
+          async function doConvert() {
+            if (state.converting) return;
+
+            const editor = document.getElementById('editor');
+            const content = editor.value.trim();
+
+            if (!content && !state.currentFile) {
+              showToast('请先打开或创建一个文件', 'error');
+              return;
+            }
+
+            if (state.selectedStyles.length === 0) {
+              showToast('请至少选择一种输出格式', 'error');
+              return;
+            }
+
+            state.converting = true;
+            updateConvertButton();
+            document.getElementById('convertBtn').classList.add('converting');
+            document.getElementById('convertingOverlay').classList.add('active');
+            document.getElementById('convertingText').textContent = `正在转换 (${state.selectedStyles.length} 种格式)...`;
+            document.getElementById('statusText').textContent = '转换中...';
+
+            try {
+              const body = {};
+              if (state.currentFile) {
+                body.filePath = state.currentFile.path;
+                body.source = state.currentFile.source;
+              }
+              // Always send content for latest edits
+              body.content = content;
+              body.filename = state.currentFile ? state.currentFile.path.split('/').pop() : '未命名.md';
+              body.styles = state.selectedStyles;
+
+              const result = await API.post('/api/convert', body);
+
+              // Show results
+              showConvertResults(result.results);
+              await loadFiles();
+              showToast(`转换完成: ${result.results.filter(r => r.status === 'ok').length} 个文件`, 'success');
+            } catch (err) {
+              showToast('转换失败: ' + err.message, 'error');
+            } finally {
+              state.converting = false;
+              updateConvertButton();
+              document.getElementById('convertBtn').classList.remove('converting');
+              document.getElementById('convertingOverlay').classList.remove('active');
+              document.getElementById('statusText').textContent = '就绪';
+            }
+          }
+
+          function showConvertResults(results) {
+            const panel = document.getElementById('outputPanel');
+            const list = document.getElementById('outputList');
+            panel.classList.remove('hidden');
+
+            const styleLabels = {
+              'journal': '学术期刊',
+              'cornell-notes': '康奈尔笔记',
+              'normal-a4': '通用 A4',
+            };
+
+            list.innerHTML = results.map(r => {
+              if (r.status === 'ok') {
+                const safeOutput = escapeHtml(r.output);
+                return `<div class="output-item">
+                  <div class="out-icon">PDF</div>
+                  <div class="out-info">
+                    <div class="out-name">${safeOutput}</div>
+                    <div class="out-meta">
+                      <span class="badge badge-blue">${styleLabels[r.style] || r.style}</span>
+                      <span>${r.sizeText}</span>
+                      <span>${r.elapsed}</span>
+                    </div>
+                  </div>
+                  <div class="out-actions">
+                    <button class="btn-icon" onclick="previewPdf('${safeOutput}')" title="预览">👁</button>
+                    <button class="btn-icon" onclick="downloadPdf('${safeOutput}')" title="下载">⬇</button>
+                  </div>
+                </div>`;
+              if (r.status === 'ok') {
+                return `<div class="output-item">
+                  <div class="out-icon">PDF</div>
+                  <div class="out-info">
+                    <div class="out-name">${r.output}</div>
+                    <div class="out-meta">
+                      <span class="badge badge-blue">${styleLabels[r.style] || r.style}</span>
+                      <span>${r.sizeText}</span>
+                      <span>${r.elapsed}</span>
+                    </div>
+                  </div>
+                  <div class="out-actions">
+                    <button class="btn-icon" onclick="previewPdf('${r.output}')" title="预览">👁</button>
+                    <button class="btn-icon" onclick="downloadPdf('${r.output}')" title="下载">⬇</button>
+                  </div>
+                </div>`;
+              } else {
+                return `<div class="output-item">
+                  <div class="out-icon" style="background:var(--red-light);color:var(--red)">!</div>
+                  <div class="out-info">
+                    <div class="out-name" style="color:var(--red)">${r.style}: 转换失败</div>
+                    <div class="out-meta"><span>${r.error}</span></div>
+                  </div>
+                </div>`;
+              }
+            }).join('');
+          }
+
+          function toggleOutputPanel() {
+            document.getElementById('outputPanel').classList.toggle('hidden');
+          }
+
+          // ─── PDF Preview & Download ───────────────────
+          function previewPdf(filePath) {
+            const overlay = document.getElementById('pdfOverlay');
+            const frame = document.getElementById('pdfFrame');
+            const title = document.getElementById('pdfTitle');
+            title.textContent = filePath;
+            frame.src = `/api/download?path=${encodeURIComponent(filePath)}`;
+            overlay.classList.add('active');
+          }
+
+          function closePdfPreview() {
+            const overlay = document.getElementById('pdfOverlay');
+            document.getElementById('pdfFrame').src = '';
+            overlay.classList.remove('active');
+          }
+
+          // ESC to close
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closePdfPreview();
+          });
+
+          function downloadPdf(filePath) {
+            const a = document.createElement('a');
+            a.href = `/api/download?path=${encodeURIComponent(filePath)}`;
+            a.download = filePath.split('/').pop();
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+          }
+
+          // ─── Editor Events ────────────────────────────
+          document.getElementById('editor').addEventListener('input', () => {
+            updateCharCount();
+            updateConvertButton();
+            if (state.currentFile) state.currentFile.modified = true;
+            if (state.activeTab === 'preview') renderPreview();
+          });
+
+          // Tab key support in editor
+          document.getElementById('editor').addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+              e.preventDefault();
+              const ta = e.target;
+              const start = ta.selectionStart;
+              const end = ta.selectionEnd;
+              ta.value = ta.value.substring(0, start) + '  ' + ta.value.substring(end);
+              ta.selectionStart = ta.selectionEnd = start + 2;
+            }
+          });
+
+          // ─── Initialize ───────────────────────────────
+          async function init() {
+            await loadFiles();
+            updateConvertButton();
+          }
+
+          init();
+    </script>
+  </body>
+</html>

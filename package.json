@@ -1,0 +1,50 @@
+{
+  "name": "md2journal",
+  "version": "1.0.0",
+  "description": "Markdown → 中文期刊 PDF 批量自动转换工具",
+  "type": "module",
+  "bin": {
+    "md2journal": "./cli.js"
+  },
+  "scripts": {
+    "test": "vitest",
+    "test:run": "vitest run",
+    "lint": "eslint . --no-eslintrc -c eslint.config.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "node cli.js build ./input ./output",
+    "watch": "node cli.js watch ./input ./output",
+    "demo": "node cli.js build ./demo ./output",
+    "build:all": "node cli.js build ./input ./output --all-styles",
+    "build:cornell": "node cli.js build ./input ./output --css cornell-notes",
+    "build:a4": "node cli.js build ./input ./output --css normal-a4",
+    "demo:cornell": "node cli.js build ./demo ./output --css cornell-notes",
+    "demo:a4": "node cli.js build ./demo ./output --css normal-a4",
+    "demo:all": "node cli.js build ./demo ./output --all-styles",
+    "gui": "node gui.js",
+    "gui:3000": "node gui.js --port 3000"
+  },
+  "dependencies": {
+    "@fontsource/fira-code": "^5.0.0",
+    "@fontsource/jetbrains-mono": "^5.0.0",
+    "@fontsource/noto-color-emoji": "^5.0.0",
+    "@fontsource/noto-sans-sc": "^5.0.0",
+    "@fontsource/noto-serif-sc": "^5.0.0",
+    "@fontsource/source-code-pro": "^5.0.0",
+    "chalk": "^5.3.0",
+    "chokidar": "^4.0.0",
+    "commander": "^12.0.0",
+    "glob": "^11.0.0",
+    "gray-matter": "^4.0.0",
+    "katex": "^0.16.0",
+    "marked": "^14.0.0",
+    "mermaid": "^11.12.3",
+    "puppeteer": "^23.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^10.0.2",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1",
+    "vitest": "^4.0.18"
+  }
+}
